@@ -1,0 +1,13 @@
+# Limitar la cantidad de archivos listados
+# Permitir solo el archivo index.json y algunos archivos de ejemplo
+!index.json
+!data_*.json
+!map_*.html
+
+# Ignorar archivos temporales
+*.tmp
+*.temp
+*.bak
+
+# Comentario: Este archivo permite listar algunos archivos de mapas
+# pero de manera controlada para evitar problemas de límite de tokens

@@ -1,0 +1,13 @@
+{
+    "hostname": "ip-172-31-40-57",
+    "ip": "172.31.40.57",
+    "port": 3000,
+    "autodeploy_port": 9000,
+    "urls": {
+        "principal": "http://ip-172-31-40-57:3000/",
+        "ip_publica": "http://172.31.40.57:3000/",
+        "localhost": "http://localhost:3000/",
+        "autodeploy": "http://ip-172-31-40-57:9000/webhook"
+    },
+    "configurado_en": "Mon Oct 27 04:31:00 UTC 2025"
+}

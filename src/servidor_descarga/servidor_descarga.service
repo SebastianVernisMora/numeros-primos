@@ -1,0 +1,22 @@
+[Unit]
+Description=Servidor de Descarga - Mapas Interactivos
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/servidor_descarga
+ExecStart=/bin/bash /home/admin/servidor_descarga/run_server.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/admin/servidor_descarga/systemd.log
+StandardError=append:/home/admin/servidor_descarga/systemd_error.log
+
+# Configuración de seguridad
+PrivateTmp=true
+ProtectSystem=full
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

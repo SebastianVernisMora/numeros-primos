@@ -1,0 +1,16 @@
+[Unit]
+Description=Enhanced Prime Visualization Application
+After=network.target
+
+[Service]
+User=admin
+WorkingDirectory=/home/admin
+ExecStart=/usr/bin/python3 /home/admin/deploy_enhanced.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/admin/enhanced_app.log
+StandardError=append:/home/admin/enhanced_app.log
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target

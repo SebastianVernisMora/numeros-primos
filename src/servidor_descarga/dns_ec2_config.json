@@ -1,0 +1,18 @@
+{
+    "hostname": "ip-172-31-40-57",
+    "ip": "172.31.40.57",
+    "dns_publico": "ec2-3-144-134-110.us-east-2.compute.amazonaws.com",
+    "port": 80,
+    "urls": {
+        "dns_publico": "http://ec2-3-144-134-110.us-east-2.compute.amazonaws.com/",
+        "hostname": "http://ip-172-31-40-57/",
+        "ip_publica": "http://172.31.40.57/",
+        "localhost": "http://localhost/"
+    },
+    "proxy": {
+        "from_port": 80,
+        "to_port": 3000,
+        "proxy_server": "nginx"
+    },
+    "configurado_en": "Mon Oct 27 04:50:06 UTC 2025"
+}
