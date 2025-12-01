@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapas de Primos - Datos Pregenerados (10K × 1.3K)</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #FFD700;
+            --bg-dark: rgba(0, 0, 0, 0.9);
+            --prime-regular: #4D96FF;
+            --prime-twin: #FF0000;
+            --prime-sexy: #FF1493;
+            --composite: #404040;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .header {
+            background: var(--bg-dark);
+            padding: 1rem 2rem;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--accent-color), #FF6B9D, #00FFFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .controls-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 200px);
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .info-panel {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+
+        .map-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .interactive-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .prime-map-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-origin: center center;
+            transition: transform 0.4s ease;
+        }
+
+        .prime-element {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+
+        .prime-element:hover {
+            transform: scale(3);
+            z-index: 100;
+            border-width: 3px;
+            filter: brightness(1.4) saturate(1.3);
+            box-shadow: 0 0 20px rgba(255,255,255,0.8);
+        }
+
+        .prime-element.compuesto { background: var(--composite); opacity: 0.4; }
+        .prime-element.regular { background: var(--prime-regular); box-shadow: 0 0 6px rgba(77, 150, 255, 0.4); }
+        .prime-element.gemelo { background: var(--prime-twin); box-shadow: 0 0 12px rgba(255, 0, 0, 0.6); }
+        .prime-element.sexy { background: var(--prime-sexy); box-shadow: 0 0 10px rgba(255, 20, 147, 0.5); }
+
+        .stats-section {
+            margin-bottom: 2rem;
+        }
+
+        .stats-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .stats-label { color: #cbd5e0; }
+        .stats-value {
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: var(--bg-dark);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            min-width: 200px;
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--accent-color);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .zoom-btn:hover {
+            background: var(--secondary-color);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">
+            <i class="fas fa-infinity"></i>
+            Mapas de Números Primos - Datos Pregenerados
+        </div>
+        <div class="subtitle">
+            Capacidad: 10,000 círculos × 1,300 segmentos | Datos optimizados desde servidor
+        </div>
+    </div>
+
+    <div class="controls-header">
+        <div class="control-group">
+            <label>Círculos:</label>
+            <input type="number" id="num-circulos" value="100" min="5" max="10000" step="5">
+        </div>
+
+        <div class="control-group">
+            <label>Segmentos:</label>
+            <input type="number" id="divisiones" value="60" min="12" max="1300" step="6">
+        </div>
+
+        <div class="control-group">
+            <label>Tipo de Mapeo:</label>
+            <select id="tipo-mapeo">
+                <option value="lineal">Lineal</option>
+                <option value="logaritmico">Logarítmico</option>
+                <option value="arquimedes">Espiral de Arquímedes</option>
+                <option value="fibonacci">Fibonacci</option>
+            </select>
+        </div>
+
+        <div class="control-group" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="filtro-primos" checked>
+            <label for="filtro-primos" style="margin-bottom: 0;">Primos</label>
+        </div>
+
+        <div class="control-group" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="filtro-compuestos" checked>
+            <label for="filtro-compuestos" style="margin-bottom: 0;">Compuestos</label>
+        </div>
+
+        <button class="btn btn-primary" onclick="cargarMapa()">
+            <i class="fas fa-download"></i>
+            Cargar Mapa
+        </button>
+
+        <button class="btn btn-secondary" onclick="listarMapas()">
+            <i class="fas fa-list"></i>
+            Ver Disponibles
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="info-panel">
+            <div class="stats-section">
+                <div class="stats-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Estadísticas
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">Rango:</span>
+                    <span class="stats-value" id="stat-rango">-</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">Total Primos:</span>
+                    <span class="stats-value" id="stat-primos">-</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">Elementos:</span>
+                    <span class="stats-value" id="stat-elementos">-</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">Hash:</span>
+                    <span class="stats-value" id="stat-hash" style="font-size: 0.7rem;">-</span>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <div class="stats-title">
+                    <i class="fas fa-server"></i>
+                    Servidor
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">Mapas en servidor:</span>
+                    <span class="stats-value" id="server-maps">-</span>
+                </div>
+                <div class="stats-item">
+                    <span class="stats-label">Estado:</span>
+                    <span class="stats-value" id="server-status">Verificando...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-panel">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="zoom-btn" onclick="zoomOut()">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="zoom-btn" onclick="resetZoom()">
+                    <i class="fas fa-compress-arrows-alt"></i>
+                </button>
+            </div>
+
+            <div class="interactive-map" id="interactive-map">
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Cargando mapa...</div>
+                </div>
+                <div class="prime-map-container" id="map-container" style="display: none;">
+                    <!-- Elementos del mapa se generan aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip">
+        <div id="tooltip-content"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let currentZoom = 1;
+        let currentMapData = null;
+
+        // Verificar estado del servidor al cargar
+        async function verificarServidor() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('server-maps').textContent = data.maps.total.toLocaleString();
+                    document.getElementById('server-status').textContent = '✅ Conectado';
+                    document.getElementById('server-status').style.color = '#00FF00';
+                }
+            } catch (error) {
+                document.getElementById('server-status').textContent = '❌ Desconectado';
+                document.getElementById('server-status').style.color = '#FF0000';
+                console.error('Error verificando servidor:', error);
+            }
+        }
+
+        // Cargar mapa desde el servidor
+        async function cargarMapa() {
+            const numCirculos = parseInt(document.getElementById('num-circulos').value);
+            const divisiones = parseInt(document.getElementById('divisiones').value);
+            const tipoMapeo = document.getElementById('tipo-mapeo').value;
+            const filtrosPrimos = document.getElementById('filtro-primos').checked;
+            const filtrosCompuestos = document.getElementById('filtro-compuestos').checked;
+
+            const parametros = {
+                num_circulos: numCirculos,
+                divisiones_por_circulo: divisiones,
+                tipo_mapeo: tipoMapeo,
+                filtros: {
+                    regulares: true,
+                    primos: filtrosPrimos,
+                    compuestos: filtrosCompuestos
+                }
+            };
+
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('map-container').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/get-map`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parametros)
+                });
+
+                const data = await response.json();
+
+                if (data.success === false) {
+                    alert(`Mapa no encontrado. ${data.alternatives?.length > 0 ? 'Hay alternativas disponibles.' : ''}`);
+                    console.log('Alternativas:', data.alternatives);
+                    return;
+                }
+
+                currentMapData = data;
+                renderizarMapa(data);
+                actualizarEstadisticas(data);
+
+            } catch (error) {
+                console.error('Error cargando mapa:', error);
+                alert('Error cargando el mapa. Verifica que el servidor esté corriendo.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Renderizar mapa en el canvas
+        function renderizarMapa(mapData) {
+            const container = document.getElementById('map-container');
+            container.innerHTML = '';
+            container.style.display = 'block';
+
+            const mapWidth = container.offsetWidth || 800;
+            const mapHeight = container.offsetHeight || 600;
+            const centerX = mapWidth / 2;
+            const centerY = mapHeight / 2;
+            const maxRadius = Math.min(centerX, centerY) - 60;
+
+            const elementos = mapData.elementos || [];
+            const metadata = mapData.metadata || {};
+
+            elementos.forEach(elemento => {
+                const div = document.createElement('div');
+                div.className = 'prime-element';
+
+                // Aplicar clases
+                if (elemento.tipos && elemento.tipos.length > 0) {
+                    div.classList.add(elemento.tipos[0]);
+                }
+
+                // Calcular posición
+                const radio = (elemento.circulo + 0.5) / metadata.num_circulos * maxRadius;
+                const angulo = elemento.segmento * 2 * Math.PI / metadata.divisiones_por_circulo - Math.PI / 2;
+                const x = centerX + radio * Math.cos(angulo);
+                const y = centerY + radio * Math.sin(angulo);
+
+                // Tamaño
+                const size = Math.max(3, 8 - elemento.circulo * 0.01);
+                div.style.width = `${size}px`;
+                div.style.height = `${size}px`;
+                div.style.left = `${x - size/2}px`;
+                div.style.top = `${y - size/2}px`;
+
+                // Eventos
+                div.addEventListener('mouseenter', (e) => mostrarTooltip(e, elemento));
+                div.addEventListener('mouseleave', ocultarTooltip);
+
+                container.appendChild(div);
+            });
+
+            console.log(`✅ Mapa renderizado: ${elementos.length} elementos`);
+        }
+
+        // Actualizar estadísticas
+        function actualizarEstadisticas(data) {
+            const metadata = data.metadata || {};
+
+            document.getElementById('stat-rango').textContent = `1 - ${metadata.total_numeros?.toLocaleString() || 'N/A'}`;
+            document.getElementById('stat-primos').textContent = 'N/A'; // No incluido en metadata optimizada
+            document.getElementById('stat-elementos').textContent = (data.elementos?.length || 0).toLocaleString();
+            document.getElementById('stat-hash').textContent = data.hash || 'N/A';
+        }
+
+        // Tooltip
+        function mostrarTooltip(event, elemento) {
+            const tooltip = document.getElementById('tooltip');
+            const content = document.getElementById('tooltip-content');
+
+            content.innerHTML = `
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-color);">${elemento.numero.toLocaleString()}</div>
+                <div style="margin-top: 0.5rem;">
+                    <strong>${elemento.es_primo ? 'PRIMO' : 'COMPUESTO'}</strong><br>
+                    Tipos: ${elemento.tipos.join(', ')}<br>
+                    Círculo: ${elemento.circulo + 1}, Segmento: ${elemento.segmento + 1}
+                </div>
+            `;
+
+            tooltip.style.left = `${event.clientX + 20}px`;
+            tooltip.style.top = `${event.clientY - 10}px`;
+            tooltip.classList.add('visible');
+        }
+
+        function ocultarTooltip() {
+            document.getElementById('tooltip').classList.remove('visible');
+        }
+
+        // Controles de zoom
+        function zoomIn() {
+            currentZoom *= 1.3;
+            if (currentZoom > 5) currentZoom = 5;
+            aplicarZoom();
+        }
+
+        function zoomOut() {
+            currentZoom *= 0.7;
+            if (currentZoom < 0.3) currentZoom = 0.3;
+            aplicarZoom();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            aplicarZoom();
+        }
+
+        function aplicarZoom() {
+            document.getElementById('map-container').style.transform = `scale(${currentZoom})`;
+        }
+
+        // Listar mapas disponibles
+        async function listarMapas() {
+            try {
+                const response = await fetch(`${API_BASE}/maps`);
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log(`📊 Mapas disponibles: ${data.total}`);
+                    console.table(data.maps.slice(0, 20));
+                    alert(`${data.total} mapas disponibles. Revisa la consola para ver los detalles.`);
+                }
+            } catch (error) {
+                console.error('Error listando mapas:', error);
+            }
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            verificarServidor();
+            console.log('🎨 Sistema de mapas pregenerados listo');
+            console.log('💡 Usa cargarMapa() o listarMapas()');
+        });
+    </script>
+</body>
+</html>

@@ -59,30 +59,38 @@ def criba_de_eratostenes_optimizada(n):
     return [i for i in range(2, n + 1) if sieve[i]]
 
 def generar_configuraciones_completas():
-    """Generar TODAS las configuraciones posibles para mapas."""
+    """Generar TODAS las configuraciones posibles para mapas - EXTENDIDO hasta 10,000 x 1,300."""
     configuraciones = []
-    
+
     # CONFIGURACIONES EXTENSIVAS - Todas las combinaciones posibles
-    
+
     # Rangos básicos (compatibilidad con mapas originales)
     circulos_basicos = list(range(5, 51, 5))  # 5, 10, 15, ..., 50
     segmentos_basicos = list(range(12, 61, 6))  # 12, 18, 24, ..., 60
-    
+
     # Rangos medios
     circulos_medios = list(range(60, 201, 20))  # 60, 80, 100, ..., 200
     segmentos_medios = list(range(60, 181, 12))  # 60, 72, 84, ..., 180
-    
+
     # Rangos altos
     circulos_altos = list(range(250, 501, 50))  # 250, 300, ..., 500
     segmentos_altos = list(range(180, 301, 30))  # 180, 210, ..., 300
-    
+
     # Rangos súper densos
     circulos_densos = list(range(600, 1001, 100))  # 600, 700, ..., 1000
     segmentos_densos = list(range(300, 361, 30))   # 300, 330, 360
-    
-    # Rangos ultra densos (los ya generados + extensiones)
+
+    # Rangos ultra densos
     circulos_ultra = list(range(1000, 3001, 200))  # 1000, 1200, ..., 3000
     segmentos_ultra = list(range(360, 501, 20))    # 360, 380, ..., 500
+
+    # NUEVOS RANGOS: Mega densos (3,000 - 10,000 círculos x hasta 1,300 segmentos)
+    circulos_mega = list(range(3000, 5001, 500))  # 3000, 3500, ..., 5000
+    segmentos_mega = list(range(500, 801, 100))   # 500, 600, 700, 800
+
+    # NUEVOS RANGOS: Máximo extremo (5,000 - 10,000 círculos)
+    circulos_extremo = list(range(5000, 10001, 1000))  # 5000, 6000, ..., 10000
+    segmentos_extremo = list(range(800, 1301, 100))    # 800, 900, 1000, 1100, 1200, 1300
     
     # Mapeos disponibles
     mapeos = ['lineal', 'logaritmico', 'arquimedes', 'fibonacci']
@@ -109,7 +117,9 @@ def generar_configuraciones_completas():
         (circulos_medios, segmentos_medios, ['lineal', 'arquimedes']),
         (circulos_altos, segmentos_altos, ['lineal']),
         (circulos_densos, segmentos_densos, ['lineal']),
-        (circulos_ultra, segmentos_ultra, ['lineal'])
+        (circulos_ultra, segmentos_ultra, ['lineal']),
+        (circulos_mega, segmentos_mega, ['lineal']),
+        (circulos_extremo, segmentos_extremo, ['lineal'])
     ]
     
     log_activity("🔥 Generando configuraciones COMPLETAS...")
@@ -120,9 +130,9 @@ def generar_configuraciones_completas():
                 for mapeo in mapeos_rango:
                     for filtros in filtros_opciones:
                         total_elementos = circulos * segmentos
-                        
-                        # Límite de seguridad: máximo 2M elementos
-                        if total_elementos <= 2000000:
+
+                        # Límite de seguridad: máximo 13M elementos (10,000 x 1,300)
+                        if total_elementos <= 13000000:
                             configuraciones.append({
                                 'num_circulos': circulos,
                                 'divisiones_por_circulo': segmentos,
@@ -163,13 +173,17 @@ def generar_datos_mapa_optimizado(parametros):
     divisiones_por_circulo = parametros['divisiones_por_circulo']
     tipo_mapeo = parametros['tipo_mapeo']
     filtros = parametros['filtros']
-    
+
     total_numeros = num_circulos * divisiones_por_circulo
-    
-    # Optimización agresiva para mapas grandes
-    if total_numeros > 500000:
-        step = max(1, total_numeros // 20000)  # Máximo 20k puntos para mapas muy grandes
-    elif total_numeros > 100000:
+
+    # Optimización agresiva para mapas MEGA grandes (10,000 x 1,300 = 13M elementos)
+    if total_numeros > 5000000:  # Más de 5M elementos
+        step = max(1, total_numeros // 15000)  # Máximo 15k puntos para mapas extremos
+    elif total_numeros > 1000000:  # 1M - 5M elementos
+        step = max(1, total_numeros // 25000)  # Máximo 25k puntos para mapas mega grandes
+    elif total_numeros > 500000:  # 500k - 1M elementos
+        step = max(1, total_numeros // 30000)  # Máximo 30k puntos para mapas muy grandes
+    elif total_numeros > 100000:  # 100k - 500k elementos
         step = max(1, total_numeros // 50000)  # Máximo 50k puntos para mapas grandes
     else:
         step = 1  # Sin optimización para mapas pequeños
