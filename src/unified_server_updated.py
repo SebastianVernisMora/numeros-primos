@@ -100,10 +100,11 @@ def generar_mapa_dinamico(parametros):
     divisiones = parametros.get('divisiones_por_circulo', 24)
     tipo_mapeo = parametros.get('tipo_mapeo', 'lineal')
     
-    limite = min(num_circulos * divisiones, 3000)  # Límite extendido a 3000
+    # Límite extendido a 13,000,000 (10,000 círculos × 1,300 segmentos)
+    limite = min(num_circulos * divisiones, 13000000)
     elementos = []
     
-    print(f"🔄 Generando mapa dinámico: {num_circulos}c x {divisiones}d ({limite} elementos)")
+    print(f"🔄 Generando mapa dinámico: {num_circulos}c x {divisiones}d ({limite:,} elementos)")
     
     # Funciones de mapeo
     def mapeo_lineal(n):
@@ -646,23 +647,104 @@ def generate_image():
         traceback.print_exc()
         return jsonify({'error': f'Error generando imagen: {str(e)}'}), 500
 
+@app.route('/api/pregenerated-map', methods=['POST', 'OPTIONS'])
+def get_pregenerated_map():
+    """API para obtener mapas pre-generados."""
+    if request.method == 'OPTIONS':
+        response = Response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+    
+    try:
+        parametros = request.get_json() or {}
+        num_circulos = parametros.get('num_circulos', 10)
+        divisiones = parametros.get('divisiones_por_circulo', 24)
+        tipo_mapeo = parametros.get('tipo_mapeo', 'lineal')
+        
+        # Generar hash de configuración
+        config_str = f"{num_circulos}_{divisiones}_{tipo_mapeo}"
+        hash_config = hashlib.md5(config_str.encode()).hexdigest()[:12]
+        
+        # Buscar en datos pre-generados
+        data_file = Path(__file__).parent / "data" / "pregenerated_maps" / f"data_{hash_config}.json.gz"
+        
+        if data_file.exists():
+            # Cargar desde archivo pre-generado
+            print(f"📦 Cargando mapa pre-generado: {hash_config}")
+            
+            import gzip
+            with gzip.open(data_file, 'rt', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            data['source'] = 'pregenerated'
+            data['cache_hit'] = True
+            
+            response = jsonify(data)
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+        else:
+            # Fallback a generación dinámica
+            print(f"⚡ Generando dinámicamente (no pre-generado): {num_circulos}c × {divisiones}s")
+            data = generar_mapa_dinamico(parametros)
+            
+            response = jsonify({
+                'elementos': data['elementos'],
+                'estadisticas': data['estadisticas'],
+                'metadata': data['metadata'],
+                'timestamp': datetime.now().isoformat(),
+                'version': '3.5.0-pm2',
+                'source': 'generated-dynamic',
+                'cache_hit': False,
+                'note': 'Mapa generado dinámicamente. Considera pre-generar con PM2.'
+            })
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+    
+    except Exception as e:
+        print(f"❌ Error obteniendo mapa: {e}")
+        traceback.print_exc()
+        return jsonify({'error': f'Error: {str(e)}'}), 500
+
 @app.route('/api/info')
 def api_info():
     """Información general de la API."""
+    # Verificar mapas pre-generados
+    index_file = Path(__file__).parent / "data" / "index.json"
+    pregenerated_count = 0
+    pregenerated_size_mb = 0
+    
+    if index_file.exists():
+        try:
+            with open(index_file, 'r') as f:
+                index_data = json.load(f)
+                pregenerated_count = index_data.get('total_count', 0)
+                pregenerated_size_mb = index_data.get('total_size_mb', 0)
+        except:
+            pass
+    
     return jsonify({
         'name': 'Servidor Unificado de Mapas Primos',
-        'version': '3.4.0-unified',
-        'description': 'Mapa interactivo y generador de imágenes en un solo puerto',
+        'version': '3.5.0-pm2',
+        'description': 'Mapa interactivo y generador de imágenes con pre-generación PM2',
         'services': {
             'interactive': {
                 'path': '/interactive',
                 'description': 'Visualización interactiva con zoom y tooltips',
-                'api': '/api/interactive-map'
+                'api': '/api/interactive-map',
+                'max_config': '10,000 círculos × 1,300 segmentos'
             },
             'images': {
                 'path': '/images', 
                 'description': 'Generador de imágenes PNG optimizado',
                 'api': '/api/generate-image'
+            },
+            'pregenerated': {
+                'api': '/api/pregenerated-map',
+                'description': 'Mapas pre-generados con PM2',
+                'count': pregenerated_count,
+                'size_mb': pregenerated_size_mb
             }
         },
         'port': 3000,
